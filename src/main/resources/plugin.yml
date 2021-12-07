@@ -1,4 +1,4 @@
-name: Difficult Food
+name: DifficultFood
 version: '${project.version}'
 main: ca.mkcodes.difficultfood.DifficultFood
 api-version: 1.18
