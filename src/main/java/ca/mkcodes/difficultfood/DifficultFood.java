@@ -6,8 +6,9 @@ public final class DifficultFood extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("---- STARTING PLUGIN ----");
-
+        this.saveDefaultConfig();
+        this.getLogger().info("---- plugin starts ---");
+        this.getServer().getPluginManager().registerEvents(new CropListener(this), this);
     }
 
     @Override
