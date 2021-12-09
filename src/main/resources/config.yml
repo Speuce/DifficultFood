@@ -35,3 +35,8 @@ bonemeal:
     - beetroots
   average: 1.4
   beetroot_factor: 0.35
+fish:
+  cod: 0.75
+  salmon: 0.3
+  tropical_fish: 0.1
+  pufferfish: 0.01

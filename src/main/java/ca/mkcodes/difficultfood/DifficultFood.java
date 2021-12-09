@@ -9,6 +9,7 @@ public final class DifficultFood extends JavaPlugin {
         this.saveDefaultConfig();
         this.getLogger().info("---- plugin starts ---");
         this.getServer().getPluginManager().registerEvents(new CropListener(this), this);
+        new OtherListeners(this);
     }
 
     @Override
