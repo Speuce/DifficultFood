@@ -1,5 +1,6 @@
 package ca.mkcodes.difficultfood;
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -9,9 +10,7 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockFertilizeEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -49,7 +48,7 @@ public class CropListener implements Listener {
             MemorySection main_mem = (MemorySection) main;
             List<String> reduce = main_mem.getStringList("reduce");
             for (String s : reduce) {
-                Material add = Material.getMaterial(s);
+                Material add = Material.matchMaterial(s);
                 if(add != null){
                     this.bonemealReducedCrops.add(add);
                 }else{
@@ -116,29 +115,70 @@ public class CropListener implements Listener {
     }
 
     @EventHandler
-    public void onCropHarvest(BlockBreakEvent e){
-        if(this.newDistributions.containsKey(e.getBlock().getType())){
-            if(e.getBlock().getBlockData() instanceof Ageable){
-                Ageable a = (Ageable)e.getBlock().getBlockData();
-                if(a.getAge() != a.getMaximumAge()){
-                    return;
-                }
-            }
-            e.setDropItems(false);
-            for(ItemDistribution i: this.newDistributions.get(e.getBlock().getType())){
-                ItemStack sample = i.sample();
-                if(sample != null){
-                    Bukkit.broadcastMessage(sample.getType().toString() + ":" + sample.getAmount());
-                    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), sample);
-                }
+    public void onPistonExtendEvent(BlockPistonExtendEvent e){
+        handlePistonEvent(e.getBlocks());
+    }
 
+    @EventHandler
+    public void onPistonRetractEvent(BlockPistonRetractEvent e){
+        handlePistonEvent(e.getBlocks());
+    }
+
+    private void handlePistonEvent(List<Block> blocks){
+        for(Block b: blocks){
+            if(this.newDistributions.containsKey(b.getType())){
+                if(b.getBlockData() instanceof Ageable){
+                    handleBreak(b);
+                }
             }
         }
     }
 
     @EventHandler
+    public void onCropHarvestBreak(BlockBreakEvent e){
+        if(this.newDistributions.containsKey(e.getBlock().getType())){
+            if(e.getBlock().getBlockData() instanceof Ageable){
+                handleBreak(e.getBlock());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCropHarvest(BlockDestroyEvent e){
+        if(this.newDistributions.containsKey(e.getBlock().getType())){
+            if(e.getBlock().getBlockData() instanceof Ageable){
+                handleBreak(e.getBlock());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onWaterFlow(BlockFromToEvent e){
+        if(this.newDistributions.containsKey(e.getToBlock().getType())){
+            if(e.getToBlock().getBlockData() instanceof Ageable){
+                handleBreak(e.getToBlock());
+            }
+        }
+    }
+
+
+    private boolean handleBreak(Block b){
+        Ageable a = (Ageable)b.getBlockData();
+        if(a.getAge() != a.getMaximumAge()){
+            return false;
+        }
+        b.getDrops().clear();
+        for(ItemDistribution i: this.newDistributions.get(b.getType())){
+            ItemStack sample = i.sample();
+            if(sample != null){
+                b.getWorld().dropItemNaturally(b.getLocation(), sample);
+            }
+        }
+        return true;
+    }
+
+    @EventHandler
     public void onBlockFertilize2(BlockFertilizeEvent e){
-        Bukkit.broadcastMessage(e.getBlock().getType().toString());
         if(e.getBlocks().size() == 1 && e.getBlock().getBlockData() instanceof Ageable && this.newDistributions.containsKey(e.getBlock().getType())){
             Block block = e.getBlock();
             e.setCancelled(true);
@@ -163,7 +203,6 @@ public class CropListener implements Listener {
             if(block.getType() == Material.BEETROOTS){
                 sample *= this.beetrootFactor;
             }
-            Bukkit.broadcastMessage("sample:" + sample);
             a.setAge(Math.min(a.getMaximumAge(), b.getAge() +(int) Math.round(sample)));
             block.setBlockData(a);
 

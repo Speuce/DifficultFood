@@ -1,5 +1,6 @@
 package ca.mkcodes.difficultfood;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
